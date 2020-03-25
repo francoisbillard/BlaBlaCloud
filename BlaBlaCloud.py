@@ -24,6 +24,8 @@
 #
 # BS4, c'est vraiment par ce que je suis un flemmard, 
 # et que j'aime bien cette lib
+# Utiliser les mots de passe d'application nextcloud pour éviter 
+# d'avoir recours à des login/pass
 
 #####################################################################72
 
