@@ -1,4 +1,5 @@
 #-*- coding:Utf-8 -*-
-myServer="https://monsuperserveur.com"
-myLogin="monBeauLogin"
-myPassword="roiDesPasswords"
+Server="https://monsuperserveur.com"
+Login="monBeauLogin"
+Password="roiDesPasswords"
+APIpath = Server + "/ocs/v2.php/apps/spreed/api/v1/"
