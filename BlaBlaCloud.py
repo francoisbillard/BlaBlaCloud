@@ -18,7 +18,7 @@
 
 # ********** Who's to blame ? **********
 #
-# Credit blablapookie@tartiflet.com
+# Credit blablapookie@pasouf.com
 
 # ********** What now ? **********
 #
@@ -29,71 +29,81 @@
 
 #####################################################################72
 
-
 import requests
 from bs4 import BeautifulSoup
-from MyServerConfig import myServer, myLogin, myPassword
+import MyServerConfig as MyConf
 
-myHeaders = {
-   'Accept_Language' : "fr-FR",
-   "OCS-APIRequest" : "true"
-   }
+class Blablacloud:
+    Session = requests.session()
+
+# L'initialiseur réalise aussi le login de la session
+    def __init__ (self, Server, Login, Password):
+        self.Server = Server
+        self.TalkURL = Server + MyConf.APIpath
+        self.Login = Login
+        self.Password = Password
+        self.Headers = {
+            'Accept_Language' : "fr-FR",
+            "OCS-APIRequest" : "true"
+            }
+        self.Session = requests.session()
+        try:
+            self.Session.get(
+                self.Server, 
+                auth = (self.Login, self.Password), 
+                headers = self.Headers
+                )
+        except requests.exceptions.RequestException as e:
+            raise SystemExit(e)
+
+# Un simple Get 
+    def GetURL(self,url):
+        print(url)
+        try:
+         result = self.Session.get(
+            url,
+            headers = self.Headers
+            )
+        except requests.exceptions.RequestException as e:
+            raise SystemExit(e)
+        return(result)
+
+# Un simple Post
+    def PostURL(self,url,payload):
+        try:
+         result = self.Session.post(
+            url,
+            data = payload,
+            headers = self.Headers
+            )
+        except requests.exceptions.RequestException as e:
+            raise SystemExit(e)
+        return(result)
+
+# Renvoie un dictionnaire {"nom du chan" : "token"}
+    def GetChanTokens(self):
+        myChanList={}
+        myURL = MyConf.APIpath + "/room"
+        r = self.GetURL(myURL)
+        soup = BeautifulSoup(r.content,'html.parser')
+        for conversation in soup.find_all('element'):
+            myChanList[
+                conversation.displayname.get_text()
+                ] = conversation.token.get_text()
+        return(myChanList)
 
 def main():
-   global myServer, myLogin, myPassword
-   talkURL = myServer + "/ocs/v2.php/apps/spreed/api/v1/"
+    b = Blablacloud(
+        MyConf.Server, 
+        MyConf.Login, 
+        MyConf.Password
+    )
 
-   with requests.Session() as session:
-      try:
-         r = session.get(
-            myServer, 
-            auth = (myLogin, myPassword), 
-            headers = myHeaders
-            )
-      except requests.exceptions.RequestException as e:
-         raise SystemExit(e)
-      
-# Exemple de réccupération de la liste des conversations, 
-# notez la grammaire : talkURL + "/room" particulièrement inélégante
-      try:
-         r = session.get(
-            talkURL + "/room",
-            headers = myHeaders
-            )
-      except requests.exceptions.RequestException as e:
-         raise SystemExit(e)
-      soup = BeautifulSoup(
-         r.content,
-         'html.parser'
-         )
-#      print(soup.prettify())
-
-# Ici on va parcourir les conversations jusqu'à en trouver une 
-# en particulier. Chacune d'elle est un <element>
-      for conversation in soup.find_all('element'):
-         if(conversation.token.get_text() == "efr56pd7"):
-# On essaie de trouver l'ID du dernier message de la conversation pour
-# satisfaire le param replyTo (qui est optionnel)
-            lastMessageID = conversation.lastmessage.id.get_text()
-            print(lastMessageID)
-
-# Envoi d'un message dans la conv de test
-# En définitive le param replyTo est optionnel et le param 
-# actorDisplayName est optionnel lorsqu'on est identifié
-      try:
-         myMessage = {
-            'message' : 'Trop foo!',
-#            'actorDisplayName' : 'myAwesomeNick',
-#            'replyTo' : lastMessageID
-            }
-# Ici encore un bijou de la méthode alar-h
-         r = session.post(
-            talkURL + "/chat/efr56pd7",
-            data = myMessage,
-            headers = myHeaders
-            )
-      except requests.exceptions.RequestException as e:
-         raise SystemExit(e)
+# Exemple d'envoi de message dans le chan "le club des nerds"
+    myChanToken = b.GetChanTokens()["Le club des nerds"]
+    myURL = MyConf.APIpath + "/chat/" + myChanToken
+    myMessage = "Message scripté"
+    r = b.PostURL(myURL , {'message' : myMessage})
 
 if __name__ == '__main__':
     main()
