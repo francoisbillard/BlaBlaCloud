@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* add setup tools for easy deployment
+* refactoring
 * minor update
 * Python with Class (but not classy)
 * .gitignore addition

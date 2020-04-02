@@ -32,9 +32,13 @@ class BlablaTalk:
 def main():
 
     usage = """
-Usage: blablacloud list [-u <login>] [-p <pwd>] [-s <server>]  
+Usage: blablacloud list -u <login> -p <pwd> -s <server>  
        blablacloud send <channel> [-u <login>] [-p <pwd>] [-s <server>] message
-       
+
+Command: 
+    list    Get list of channels available
+    send    Send a message to a channel
+    
 Options:
     -u    username
     -p    password
@@ -52,5 +56,6 @@ Options:
     if args['send']:
         blablatalk.sendMesgTo("testblablacloud", "hello")
 
-    if args['list']: 
-        print("Channels : \n\t%s" % "\n\t".join(blablatalk.getChannels()))
+    if args['list']:
+        channels = blablatalk.getChannels()
+        print("Channels : \n\t%s" % "\n\t".join(sorted(channels)))
