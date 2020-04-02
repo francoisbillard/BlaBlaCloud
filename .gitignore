@@ -1,1 +1,4 @@
 .vscode/settings.json
+build
+blablacloud_lib.egg-info/
+.eggs

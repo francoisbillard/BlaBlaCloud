@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding:Utf-8 -*-
+# -*- coding:Utf-8 -*-
 
 # ********** What ? **********
 #
@@ -31,79 +31,81 @@
 
 import requests
 from bs4 import BeautifulSoup
-import MyServerConfig as MyConf
+import os
+
 
 class Blablacloud:
-    Session = requests.session()
+
+    API_PATH = "ocs/v2.php/apps/spreed/api/v1/"
+
+    session = requests.session()
 
 # L'initialiseur réalise aussi le login de la session
-    def __init__ (self, Server, Login, Password):
-        self.Server = Server
-        self.TalkURL = Server + MyConf.APIpath
-        self.Login = Login
-        self.Password = Password
-        self.Headers = {
+    def __init__ (self, server, login, password):
+        self.server = server
+        self.talkURL = server + Blablacloud.API_PATH
+        self.login = login
+        self.password = password
+        self.headers = {
             'Accept_Language' : "fr-FR",
             "OCS-APIRequest" : "true"
             }
-        self.Session = requests.session()
+        self.session = requests.session()
         try:
-            self.Session.get(
-                self.Server, 
-                auth = (self.Login, self.Password), 
-                headers = self.Headers
+            print("get session on '%s' with '%s/%s'" % (self.server, self.login, self.password))
+            self.session.get(
+                self.server,
+                auth=(self.login, self.password),
+                headers=self.headers
                 )
         except requests.exceptions.RequestException as e:
             raise SystemExit(e)
 
 # Un simple Get 
-    def GetURL(self,url):
+    def get_url(self, url):
         print(url)
         try:
-         result = self.Session.get(
+            result = self.session.get(
             url,
-            headers = self.Headers
+            headers=self.headers
             )
         except requests.exceptions.RequestException as e:
             raise SystemExit(e)
         return(result)
 
 # Un simple Post
-    def PostURL(self,url,payload):
+    def post(self, channel, payload):
         try:
-         result = self.Session.post(
-            url,
-            data = payload,
-            headers = self.Headers
+            result = self.session.post(
+            self.API_PATH + "/chat/" + channel,
+            data=payload,
+            headers=self.headers
             )
         except requests.exceptions.RequestException as e:
             raise SystemExit(e)
         return(result)
 
+    def get_channels_name(self):
+        channels = []
+        myURL = os.path.join(self.server, Blablacloud.API_PATH,"room")
+        r = self.get_url(myURL)
+        soup = BeautifulSoup(r.content, 'html.parser')
+        
+        for conversation in soup.find_all('element'):
+            channels.append(conversation.displayname.get_text())
+        return channels
+    
 # Renvoie un dictionnaire {"nom du chan" : "token"}
-    def GetChanTokens(self):
-        myChanList={}
-        myURL = MyConf.APIpath + "/room"
-        r = self.GetURL(myURL)
-        soup = BeautifulSoup(r.content,'html.parser')
+    def get_channels_token(self, channelName):
+        myChanList = {}
+        myURL = self.server + Blablacloud.API_PATH + "/room"
+        r = self.get_url(myURL)
+        soup = BeautifulSoup(r.content, 'html.parser')
+        
         for conversation in soup.find_all('element'):
             myChanList[
                 conversation.displayname.get_text()
                 ] = conversation.token.get_text()
+      
         return(myChanList)
 
-def main():
-    b = Blablacloud(
-        MyConf.Server, 
-        MyConf.Login, 
-        MyConf.Password
-    )
-
-# Exemple d'envoi de message dans le chan "le club des nerds"
-    myChanToken = b.GetChanTokens()["Le club des nerds"]
-    myURL = MyConf.APIpath + "/chat/" + myChanToken
-    myMessage = "Message scripté"
-    r = b.PostURL(myURL , {'message' : myMessage})
-
-if __name__ == '__main__':
-    main()
