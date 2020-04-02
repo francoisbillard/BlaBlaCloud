@@ -32,9 +32,10 @@ def main():
 
     usage = """
 Usage: blablacloud list -u <login> -p <pwd> -s <server>
-       blablacloud send -u <login> -p <pwd> -s <server> <channel> <message> 
        blablacloud list -e 
        blablacloud send -e <channel> <message> 
+       blablacloud send -e -i <channel> 
+       blablacloud send -u <login> -p <pwd> -i -s <server> <channel> <message> 
 
 Command: 
     list    Get list of available channels
@@ -45,6 +46,7 @@ Options:
     -p    password
     -s    server
     -e    use environnment variable : blablaserver, blablalogin, blablapwd
+    -i    read message from stdin
 """
     try:
         args = docopt(doc=usage, argv=sys.argv[1:], help=True)
@@ -58,9 +60,13 @@ Options:
     
     blablatalk = BlablaTalk(server)
     blablatalk.connect(login, pwd)
+
     try:
-        if args['send']:
+        if args['send'] and not args['-i']:
             blablatalk.sendMesgTo(args['<channel>'], args['<message>'])
+        if args['send'] and args['-i']:
+            for line in sys.stdin:
+                blablatalk.sendMesgTo(args['<channel>'], line)
     except Exception as e:
         print("Can not send message to %s (%s)" % (args['<channel>'], e))
 

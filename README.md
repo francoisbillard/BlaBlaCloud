@@ -33,3 +33,11 @@ Run
         -p    password
         -s    server
     -e    use environnment variable : blablaserver, blablalogin, blablapwd
+
+**Examples**
+
+Send syslog to channel :
+    
+    > tail -f /var/log/syslog | blablacloud send -e -i "Le club des nerds"
+
+

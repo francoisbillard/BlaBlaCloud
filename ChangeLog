@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* chope settings from environnement. refactoring
 * add requirements.txt, update readme
 * add setup tools for easy deployment
 * refactoring
