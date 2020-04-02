@@ -43,16 +43,17 @@ class Blablacloud:
 # L'initialiseur réalise aussi le login de la session
     def __init__ (self, server, login, password):
         self.server = server
-        self.talkURL = server + Blablacloud.API_PATH
+        self.talk_url = os.path.join(server, Blablacloud.API_PATH)
         self.login = login
         self.password = password
+        self.channels = []
+        
         self.headers = {
             'Accept_Language' : "fr-FR",
             "OCS-APIRequest" : "true"
             }
         self.session = requests.session()
         try:
-            print("get session on '%s' with '%s/%s'" % (self.server, self.login, self.password))
             self.session.get(
                 self.server,
                 auth=(self.login, self.password),
@@ -61,51 +62,44 @@ class Blablacloud:
         except requests.exceptions.RequestException as e:
             raise SystemExit(e)
 
+        self.init_channels()
+
+    def init_channels(self):
+        url = os.path.join(self.talk_url, "room")
+        r = self.get_url(url)
+        soup = BeautifulSoup(r.content, 'html.parser')
+        
+        for conversation in soup.find_all('element'):
+            self.channels.append((conversation.displayname.get_text().strip(), 
+                                  conversation.token.get_text().strip()))
+        
 # Un simple Get 
     def get_url(self, url):
-        print(url)
         try:
-            result = self.session.get(
-            url,
-            headers=self.headers
-            )
+            result = self.session.get(url, headers=self.headers)
         except requests.exceptions.RequestException as e:
             raise SystemExit(e)
         return(result)
 
 # Un simple Post
-    def post(self, channel, payload):
+    def post(self, channel_name, payload):
+        token = self.get_channels_token(channel_name)
         try:
             result = self.session.post(
-            self.API_PATH + "/chat/" + channel,
+            os.path.join(self.talk_url, "chat", token),
             data=payload,
-            headers=self.headers
-            )
+            headers=self.headers)
         except requests.exceptions.RequestException as e:
             raise SystemExit(e)
         return(result)
 
     def get_channels_name(self):
-        channels = []
-        myURL = os.path.join(self.server, Blablacloud.API_PATH,"room")
-        r = self.get_url(myURL)
-        soup = BeautifulSoup(r.content, 'html.parser')
-        
-        for conversation in soup.find_all('element'):
-            channels.append(conversation.displayname.get_text())
-        return channels
+        return [channel[0] for channel in self.channels]
     
-# Renvoie un dictionnaire {"nom du chan" : "token"}
-    def get_channels_token(self, channelName):
-        myChanList = {}
-        myURL = self.server + Blablacloud.API_PATH + "/room"
-        r = self.get_url(myURL)
-        soup = BeautifulSoup(r.content, 'html.parser')
-        
-        for conversation in soup.find_all('element'):
-            myChanList[
-                conversation.displayname.get_text()
-                ] = conversation.token.get_text()
-      
-        return(myChanList)
+# Renvoie le token du channel
+    def get_channels_token(self, channel_name):
+        all = [channel for channel in self.channels if channel[0] == channel_name]
+        if not all:
+            raise Exception("Channel not found")
+        return [channel for channel in self.channels if channel[0] == channel_name][0][1]
 

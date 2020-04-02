@@ -23,8 +23,7 @@ class BlablaTalk:
         self.blaclacloud = Blablacloud(self.server, self.login, self.pwd)
         
     def sendMesgTo(self, channel_name, msg):
-        self.channel = self.blaclacloud.get_channels_name()[channel_name]
-        self.blaclacloud.post(self.channel, {'message': msg})
+        self.blaclacloud.post(channel_name, {'message': msg})
 
     def getChannels(self):
         return self.blaclacloud.get_channels_name()
@@ -32,29 +31,38 @@ class BlablaTalk:
 def main():
 
     usage = """
-Usage: blablacloud list -u <login> -p <pwd> -s <server>  
-       blablacloud send <channel> [-u <login>] [-p <pwd>] [-s <server>] message
+Usage: blablacloud list -u <login> -p <pwd> -s <server>
+       blablacloud send -u <login> -p <pwd> -s <server> <channel> <message> 
+       blablacloud list -e 
+       blablacloud send -e <channel> <message> 
 
 Command: 
-    list    Get list of channels available
+    list    Get list of available channels
     send    Send a message to a channel
     
 Options:
     -u    username
     -p    password
     -s    server
+    -e    use environnment variable : blablaserver, blablalogin, blablapwd
 """
     try:
         args = docopt(doc=usage, argv=sys.argv[1:], help=True)
-        print(args)
     except DocoptExit:
         raise
-    
-    blablatalk = BlablaTalk(args['<server>'])
-    blablatalk.connect(args['<login>'], args['<pwd>'])
 
-    if args['send']:
-        blablatalk.sendMesgTo("testblablacloud", "hello")
+    login = args['<login>'] if args['-u'] else os.getenv("blablalogin", "login not set")
+    pwd = args['<pwd>'] if args['-p'] else os.getenv("blablapwd", "pwd not set")
+    server = args['<server>'] if args['-s'] else os.getenv("blablaserver", "server not set")
+
+    
+    blablatalk = BlablaTalk(server)
+    blablatalk.connect(login, pwd)
+    try:
+        if args['send']:
+            blablatalk.sendMesgTo(args['<channel>'], args['<message>'])
+    except Exception as e:
+        print("Can not send message to %s (%s)" % (args['<channel>'], e))
 
     if args['list']:
         channels = blablatalk.getChannels()

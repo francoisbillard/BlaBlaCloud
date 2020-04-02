@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* add requirements.txt, update readme
 * add setup tools for easy deployment
 * refactoring
 * minor update
